@@ -54,6 +54,13 @@ const userSchema = new mongoose.Schema(
       enum: ['active', 'banned', 'pending'],
       default: 'active',
     },
+    // Payout details for commissions
+    payoutDetails: {
+      accountName: { type: String },
+      accountNumber: { type: String },
+      bankName: { type: String },
+      bankCode: { type: String }
+    },
   },
   { timestamps: true }
 );
