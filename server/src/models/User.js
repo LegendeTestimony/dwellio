@@ -4,15 +4,18 @@ import bcrypt from 'bcryptjs';
 
 const userSchema = new mongoose.Schema(
   {
-    fullName: {
+    firstName: {
       type: String,
       required: true,
       trim: true,
     },
-    username: {
+    lastName: {
       type: String,
       required: true,
-      unique: true,
+      trim: true,
+    },
+    fullName: {
+      type: String,
       trim: true,
     },
     email: {
@@ -22,7 +25,7 @@ const userSchema = new mongoose.Schema(
       trim: true,
       lowercase: true,
     },
-    phone: {
+    phoneNumber: {
       type: String,
       required: true,
       unique: true,
@@ -37,9 +40,58 @@ const userSchema = new mongoose.Schema(
       enum: ['tenant', 'landlord', 'admin'],
       default: 'tenant',
     },
-    isVerified: {
-      type: Boolean,
-      default: false,
+    // Tenant-specific fields
+    tenantProfile: {
+      occupation: { type: String },
+      employerName: { type: String },
+      monthlyIncome: { type: Number },
+      emergencyContactName: { type: String },
+      emergencyContactPhone: { type: String },
+      guarantorName: { type: String },
+      guarantorPhone: { type: String },
+      guarantorEmail: { type: String },
+      // Current residence information
+      currentResidence: {
+        address: { type: String },
+        landlordName: { type: String },
+        landlordPhone: { type: String },
+        moveInDate: { type: Date },
+        rentAmount: { type: Number },
+        isCurrentlyRenting: { type: Boolean, default: false }
+      },
+      // Verification documents
+      documents: [{
+        type: { type: String, enum: ['id_card', 'utility_bill', 'bank_statement', 'employment_letter', 'passport'] },
+        url: { type: String },
+        filename: { type: String },
+        uploadDate: { type: Date, default: Date.now },
+        verified: { type: Boolean, default: false }
+      }],
+      // Move-out intent
+      moveOutIntent: {
+        intendedDate: { type: Date },
+        reason: { type: String },
+        preferredAreas: [{ type: String }],
+        budgetRange: {
+          min: { type: Number },
+          max: { type: Number }
+        },
+        propertyType: { type: String },
+        facilitationRequested: { type: Boolean, default: false },
+        status: { type: String, enum: ['pending', 'searching', 'matched', 'completed'], default: 'pending' }
+      }
+    },
+    // Verification status
+    verificationStatus: {
+      type: String,
+      enum: ['pending', 'verified', 'rejected'],
+      default: 'pending',
+    },
+    trustScore: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100
     },
     profilePhoto: {
       type: String,
@@ -54,18 +106,17 @@ const userSchema = new mongoose.Schema(
       enum: ['active', 'banned', 'pending'],
       default: 'active',
     },
-    // Payout details for commissions
-    payoutDetails: {
-      accountName: { type: String },
-      accountNumber: { type: String },
-      bankName: { type: String },
-      bankCode: { type: String }
-    },
   },
   { timestamps: true }
 );
 
 userSchema.pre('save', async function (next) {
+  // Generate fullName from firstName and lastName
+  if (this.firstName && this.lastName) {
+    this.fullName = `${this.firstName} ${this.lastName}`;
+  }
+  
+  // Hash password if it's modified
   if (!this.isModified('password')) return next();
   try {
     const salt = await bcrypt.genSalt(10);

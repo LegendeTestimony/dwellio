@@ -8,7 +8,7 @@ import nodemailer from 'nodemailer';
 const generateToken = (user) => {
   const jwtSecret = process.env.JWT_SECRET;
   return jwt.sign(
-    { userId: user._id, username: user.username, email: user.email, role: user.role },
+    { userId: user._id, email: user.email, role: user.role },
     jwtSecret,
     { expiresIn: '1h' }
   );
@@ -17,19 +17,25 @@ const generateToken = (user) => {
 // Signup Controller
 export const signup = async (req, res) => {
   try {
-    const { fullName, username, email, phone, password, role } = req.body;
-    if (!fullName || !username || !email || !phone || !password) {
+    const { firstName, lastName, email, phoneNumber, password, role } = req.body;
+    if (!firstName || !lastName || !email || !phoneNumber || !password) {
       return res.status(400).json({ message: 'All fields are required.' });
     }
-    const existingUser = await User.findOne({ $or: [{ email }, { username }, { phone }] });
+    const existingUser = await User.findOne({ $or: [{ email }, { phoneNumber }] });
     if (existingUser) {
-      return res.status(400).json({ message: 'Username, email, or phone already exists.' });
+      return res.status(400).json({ message: 'Email or phone number already exists.' });
     }
-    const user = new User({ fullName, username, email, phone, password, role });
+    const user = new User({ firstName, lastName, email, phoneNumber, password, role });
     await user.save();
     const userObj = user.toObject();
     delete userObj.password;
-    res.status(201).json({ message: 'User registered successfully.', user: userObj });
+    const token = generateToken(user);
+    res.status(201).json({ 
+      success: true,
+      message: 'User registered successfully.', 
+      user: userObj,
+      token 
+    });
   } catch (err) {
     console.error('Signup Error:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -39,11 +45,11 @@ export const signup = async (req, res) => {
 // Login Controller
 export const login = async (req, res) => {
   try {
-    const { email, username, phone, password } = req.body;
-    if ((!email && !username && !phone) || !password) {
-      return res.status(400).json({ message: 'Email, username, or phone and password are required.' });
+    const { email, phoneNumber, password } = req.body;
+    if ((!email && !phoneNumber) || !password) {
+      return res.status(400).json({ message: 'Email or phone number and password are required.' });
     }
-    const user = await User.findOne(email ? { email } : username ? { username } : { phone });
+    const user = await User.findOne(email ? { email } : { phoneNumber });
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials.' });
     }
@@ -53,11 +59,15 @@ export const login = async (req, res) => {
     }
     const token = generateToken(user);
     res.json({
+      success: true,
       token,
       user: {
-        userId: user._id,
-        username: user.username,
+        _id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        fullName: user.fullName,
         email: user.email,
+        phoneNumber: user.phoneNumber,
         role: user.role,
         isVerified: user.isVerified,
       },
@@ -73,7 +83,10 @@ export const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.userId).select('-password');
     if (!user) return res.status(404).json({ message: 'User not found.' });
-    res.json(user);
+    res.json({ 
+      success: true, 
+      data: user 
+    });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
@@ -82,7 +95,7 @@ export const getMe = async (req, res) => {
 // Update profile
 export const updateProfile = async (req, res) => {
   try {
-    const updates = (({ fullName, phone, preferredContactMethod, profilePhoto }) => ({ fullName, phone, preferredContactMethod, profilePhoto }))(req.body);
+    const updates = (({ firstName, lastName, phoneNumber, preferredContactMethod, profilePhoto }) => ({ firstName, lastName, phoneNumber, preferredContactMethod, profilePhoto }))(req.body);
     const user = await User.findByIdAndUpdate(req.user.userId, updates, { new: true, runValidators: true }).select('-password');
     res.json(user);
   } catch (err) {

@@ -1,0 +1,278 @@
+// dwellio/controllers/tenantController.js
+import User from '../models/User.js';
+import Application from '../models/Application.js';
+import multer from 'multer';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Get tenant profile
+export const getTenantProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({
+      success: true,
+      data: user
+    });
+  } catch (error) {
+    console.error('Get tenant profile error:', error);
+    res.status(500).json({ 
+      message: 'Failed to fetch profile', 
+      error: error.message 
+    });
+  }
+};
+
+// Update tenant profile
+export const updateTenantProfile = async (req, res) => {
+  try {
+    const updates = req.body;
+    
+    // Remove sensitive fields that shouldn't be updated via this endpoint
+    delete updates.password;
+    delete updates.email;
+    delete updates.role;
+    delete updates.trustScore;
+    delete updates.verificationStatus;
+
+    const user = await User.findByIdAndUpdate(
+      req.user.userId,
+      { $set: updates },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: user
+    });
+  } catch (error) {
+    console.error('Update tenant profile error:', error);
+    res.status(500).json({ 
+      message: 'Failed to update profile', 
+      error: error.message 
+    });
+  }
+};
+
+// Upload verification documents
+export const uploadVerificationDocument = async (req, res) => {
+  try {
+    const { documentType } = req.body;
+    
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    const allowedTypes = ['id_card', 'utility_bill', 'bank_statement', 'employment_letter', 'passport'];
+    if (!allowedTypes.includes(documentType)) {
+      return res.status(400).json({ message: 'Invalid document type' });
+    }
+
+    const documentData = {
+      type: documentType,
+      url: `/uploads/${req.file.filename}`,
+      filename: req.file.filename,
+      uploadDate: new Date(),
+      verified: false
+    };
+
+    const user = await User.findByIdAndUpdate(
+      req.user.userId,
+      { $push: { 'tenantProfile.documents': documentData } },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Document uploaded successfully',
+      data: documentData
+    });
+  } catch (error) {
+    console.error('Upload document error:', error);
+    res.status(500).json({ 
+      message: 'Failed to upload document', 
+      error: error.message 
+    });
+  }
+};
+
+// Submit move-out intent
+export const submitMoveOutIntent = async (req, res) => {
+  try {
+    const { 
+      intendedDate, 
+      reason, 
+      preferredAreas, 
+      budgetRange, 
+      propertyType, 
+      facilitationRequested 
+    } = req.body;
+
+    const moveOutData = {
+      'tenantProfile.moveOutIntent': {
+        intendedDate,
+        reason,
+        preferredAreas,
+        budgetRange,
+        propertyType,
+        facilitationRequested,
+        status: 'pending'
+      }
+    };
+
+    const user = await User.findByIdAndUpdate(
+      req.user.userId,
+      { $set: moveOutData },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Move-out intent submitted successfully',
+      data: user.tenantProfile.moveOutIntent
+    });
+  } catch (error) {
+    console.error('Submit move-out intent error:', error);
+    res.status(500).json({ 
+      message: 'Failed to submit move-out intent', 
+      error: error.message 
+    });
+  }
+};
+
+// Get tenant dashboard stats
+export const getTenantDashboardStats = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    
+    // Get user profile
+    const user = await User.findById(userId).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Get application statistics
+    const applications = await Application.countDocuments({ tenantId: userId });
+
+    // Calculate profile completion
+    const profileCompletion = calculateProfileCompletion(user);
+
+    // Get recent applications
+    const recentApplications = await Application.find({ tenantId: userId })
+      .populate('propertyId', 'title type location rent features')
+      .sort({ createdAt: -1 })
+      .limit(5);
+
+    // Get application stats by status
+    const applicationStats = await Application.aggregate([
+      { $match: { tenantId: userId } },
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Format current residence data
+    const currentResidence = user.tenantProfile?.currentResidence?.address ? {
+      address: user.tenantProfile.currentResidence.address,
+      leaseExpiry: user.tenantProfile.currentResidence.leaseEndDate
+    } : null;
+
+    res.json({
+      success: true,
+      data: {
+        user,
+        profileCompletion,
+        verificationStatus: user.verificationStatus,
+        trustworthinessScore: user.trustScore,
+        applications,
+        currentResidence,
+        applicationStats,
+        recentApplications
+      }
+    });
+  } catch (error) {
+    console.error('Get tenant dashboard stats error:', error);
+    res.status(500).json({ 
+      message: 'Failed to fetch dashboard stats', 
+      error: error.message 
+    });
+  }
+};
+
+// Helper function to calculate profile completion
+function calculateProfileCompletion(user) {
+  const requiredFields = [
+    'tenantProfile.occupation',
+    'tenantProfile.employerName',
+    'tenantProfile.monthlyIncome',
+    'tenantProfile.emergencyContactName',
+    'tenantProfile.emergencyContactPhone'
+  ];
+
+  const optionalFields = [
+    'tenantProfile.guarantorName',
+    'tenantProfile.guarantorPhone',
+    'tenantProfile.guarantorEmail',
+    'tenantProfile.currentResidence.address'
+  ];
+
+  let completed = 0;
+  let total = requiredFields.length + optionalFields.length;
+
+  // Check required fields
+  requiredFields.forEach(field => {
+    if (getNestedValue(user, field)) {
+      completed++;
+    }
+  });
+
+  // Check optional fields
+  optionalFields.forEach(field => {
+    if (getNestedValue(user, field)) {
+      completed++;
+    }
+  });
+
+  // Check documents
+  if (user.tenantProfile?.documents?.length > 0) {
+    completed++;
+  }
+  total++;
+
+  return {
+    percentage: Math.round((completed / total) * 100),
+    completed,
+    total
+  };
+}
+
+// Helper function to get nested object values
+function getNestedValue(obj, path) {
+  return path.split('.').reduce((current, key) => {
+    return current && current[key] !== undefined ? current[key] : null;
+  }, obj);
+}

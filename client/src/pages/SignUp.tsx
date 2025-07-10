@@ -1,18 +1,21 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import { toast } from 'react-toastify';
 
 export default function SignUp() {
   const [form, setForm] = useState({
-    fullName: '',
-    username: '',
+    firstName: '',
+    lastName: '',
     email: '',
-    phone: '',
+    phoneNumber: '',
     password: '',
-    role: 'tenant',
+    role: 'tenant' as const,
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { signup } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -23,24 +26,20 @@ export default function SignUp() {
     setLoading(true);
     setError('');
     try {
-      // Replace with your API endpoint
-      const res = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Sign up failed');
-      navigate('/signin');
-
+      await signup(form);
+      toast.success('Sign up successful!');
+      navigate('/');
     } catch (err: unknown) {
-    if (err instanceof Error) {
+      if (err instanceof Error) {
         setError(err.message);
-    } else if (typeof err === 'string') {
+        toast.error(err.message);
+      } else if (typeof err === 'string') {
         setError(err);
-    } else {
+        toast.error(err);
+      } else {
         setError('An unexpected error occurred');
-    }
+        toast.error('An unexpected error occurred');
+      }
     } finally {
       setLoading(false);
     }
@@ -53,18 +52,18 @@ export default function SignUp() {
         {error && <div className="mb-4 text-red-600">{error}</div>}
         <input
           type="text"
-          name="fullName"
-          placeholder="Full Name"
-          value={form.fullName}
+          name="firstName"
+          placeholder="First Name"
+          value={form.firstName}
           onChange={handleChange}
           className="w-full mb-4 px-4 py-2 border rounded"
           required
         />
         <input
           type="text"
-          name="username"
-          placeholder="Username"
-          value={form.username}
+          name="lastName"
+          placeholder="Last Name"
+          value={form.lastName}
           onChange={handleChange}
           className="w-full mb-4 px-4 py-2 border rounded"
           required
@@ -80,9 +79,9 @@ export default function SignUp() {
         />
         <input
           type="text"
-          name="phone"
-          placeholder="Phone"
-          value={form.phone}
+          name="phoneNumber"
+          placeholder="Phone Number"
+          value={form.phoneNumber}
           onChange={handleChange}
           className="w-full mb-4 px-4 py-2 border rounded"
           required
@@ -104,17 +103,18 @@ export default function SignUp() {
         >
           <option value="tenant">Tenant</option>
           <option value="landlord">Landlord</option>
+          <option value="referrer">Referrer</option>
         </select>
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+          className="w-full bg-primary-700 text-white py-2 rounded hover:bg-primary-800 disabled:opacity-50"
           disabled={loading}
         >
           {loading ? 'Signing up...' : 'Sign Up'}
         </button>
         <div className="mt-4 text-center">
           <span>Already have an account? </span>
-          <Link to="/signin" className="text-blue-600 hover:underline">Sign In</Link>
+          <Link to="/signin" className="text-primary-600 hover:underline">Sign In</Link>
         </div>
       </form>
     </div>

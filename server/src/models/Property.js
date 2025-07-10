@@ -22,47 +22,36 @@ const propertySchema = new mongoose.Schema({
   landlordId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: false // Now optional since anyone can list
+    required: true
   },
-  // Referral System Fields
-  listedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true // Who actually created this listing
-  },
-  isOwnerListing: {
-    type: Boolean,
-    default: false // True if landlord listed it themselves
-  },
-  verificationStatus: {
-    type: String,
-    enum: ['pending', 'approved', 'rejected', 'needs_verification'],
-    default: 'pending'
-  },
-  rejectionReason: { type: String },
-  // Contact Information (for non-owner listings)
+  // Simplified for tenant-focused MVP
   landlordContact: {
-    phone: { type: String },
-    email: { type: String },
-    name: { type: String }
-  },
-  isInEstate: {
-    type: Boolean,
-    default: false
-  },
-  estateId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Estate',
-    default: null
+    phone: { type: String, required: true },
+    email: { type: String, required: true },
+    name: { type: String, required: true }
   },
   location: locationSchema,
-  media: [{ type: String }],
-  sharedFacilities: [{ type: String }],
-  description: { type: String },
+  media: [{
+    url: { type: String },
+    filename: { type: String },
+    originalName: { type: String },
+    size: { type: Number }
+  }],
+  amenities: [{ type: String }],
+  description: { type: String, required: true },
+  rent: {
+    amount: { type: Number, required: true },
+    period: { type: String, enum: ['monthly', 'yearly'], default: 'yearly' }
+  },
+  deposit: { type: Number, required: true },
   status: {
     type: String,
-    enum: ['listed', 'occupied', 'hidden', 'pending_review'],
-    default: 'pending_review'
+    enum: ['available', 'occupied', 'pending'],
+    default: 'available'
+  },
+  isActive: {
+    type: Boolean,
+    default: true
   }
 }, { timestamps: true });
 

@@ -1,86 +1,30 @@
 // dwellio/controllers/propertyController.js
 import Property from '../models/Property.js';
-import Referral from '../models/Referral.js';
 import User from '../models/User.js';
+import Application from '../models/Application.js';
 
-// Create property listing (anyone can list)
-export const createProperty = async (req, res) => {
+// Get all available properties (for tenant browsing)
+const getAvailableProperties = async (req, res) => {
   try {
-    const {
-      title,
-      type,
-      location,
-      description,
-      media,
-      sharedFacilities,
-      landlordContact,
-      isOwnerListing = false
-    } = req.body;
-
-    // Validate Abuja location
-    if (location.state.toLowerCase() !== 'abuja' && location.state.toLowerCase() !== 'fct') {
-      return res.status(400).json({ 
-        message: 'Currently only accepting properties in Abuja/FCT' 
-      });
-    }
-
-    // Create property
-    const property = new Property({
-      title,
-      type,
-      location,
-      description,
-      media: media || [],
-      sharedFacilities: sharedFacilities || [],
-      listedBy: req.user.userId,
-      isOwnerListing,
-      landlordContact: isOwnerListing ? null : landlordContact,
-      landlordId: isOwnerListing ? req.user.userId : null,
-      status: 'pending_review',
-      verificationStatus: 'pending'
-    });
-
-    await property.save();
-
-    // Create referral record if not owner listing
-    if (!isOwnerListing) {
-      const referral = new Referral({
-        propertyId: property._id,
-        referrerId: req.user.userId,
-        commissionRate: 5.0
-      });
-      await referral.save();
-    }
-
-    res.status(201).json({
-      message: 'Property listed successfully! It will be reviewed and published within 24 hours.',
-      property: property,
-      referralCreated: !isOwnerListing
-    });
-  } catch (error) {
-    console.error('Create property error:', error);
-    res.status(500).json({ 
-      message: 'Failed to create property listing', 
-      error: error.message 
-    });
-  }
-};
-
-// Get all approved properties (public)
-export const getAllProperties = async (req, res) => {
-  try {
-    const { page = 1, limit = 12, type, minPrice, maxPrice } = req.query;
+    const { page = 1, limit = 12, type, city, lga, minRent, maxRent } = req.query;
     
     const query = {
-      verificationStatus: 'approved',
-      status: 'listed'
+      status: 'available',
+      isActive: true
     };
 
+    // Apply filters
     if (type) query.type = type;
+    if (city) query['location.city'] = { $regex: city, $options: 'i' };
+    if (lga) query['location.lga'] = { $regex: lga, $options: 'i' };
+    if (minRent || maxRent) {
+      query['rent.amount'] = {};
+      if (minRent) query['rent.amount'].$gte = parseInt(minRent);
+      if (maxRent) query['rent.amount'].$lte = parseInt(maxRent);
+    }
     
     const properties = await Property.find(query)
-      .populate('listedBy', 'fullName username')
-      .populate('landlordId', 'fullName phone email')
+      .populate('landlordId', 'fullName phoneNumber email')
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
@@ -88,13 +32,17 @@ export const getAllProperties = async (req, res) => {
     const total = await Property.countDocuments(query);
 
     res.json({
-      properties,
-      totalPages: Math.ceil(total / limit),
-      currentPage: page,
-      total
+      success: true,
+      data: properties,
+      pagination: {
+        totalPages: Math.ceil(total / limit),
+        currentPage: parseInt(page),
+        total,
+        limit: parseInt(limit)
+      }
     });
   } catch (error) {
-    console.error('Get properties error:', error);
+    console.error('Get available properties error:', error);
     res.status(500).json({ 
       message: 'Failed to fetch properties', 
       error: error.message 
@@ -102,24 +50,25 @@ export const getAllProperties = async (req, res) => {
   }
 };
 
-// Get single property
-export const getPropertyById = async (req, res) => {
+// Get single property details
+const getPropertyById = async (req, res) => {
   try {
     const property = await Property.findById(req.params.id)
-      .populate('listedBy', 'fullName username')
-      .populate('landlordId', 'fullName phone email');
+      .populate('landlordId', 'fullName phoneNumber email');
 
     if (!property) {
       return res.status(404).json({ message: 'Property not found' });
     }
 
-    // Only show approved properties to public
-    if (property.verificationStatus !== 'approved' && 
-        (!req.user || req.user.userId !== property.listedBy.toString())) {
-      return res.status(404).json({ message: 'Property not found' });
+    // Only show available properties
+    if (property.status !== 'available' || !property.isActive) {
+      return res.status(404).json({ message: 'Property not available' });
     }
 
-    res.json(property);
+    res.json({
+      success: true,
+      data: property
+    });
   } catch (error) {
     console.error('Get property error:', error);
     res.status(500).json({ 
@@ -129,51 +78,153 @@ export const getPropertyById = async (req, res) => {
   }
 };
 
-// Get user's listings
-export const getPropertiesByUser = async (req, res) => {
+// Submit application for a property
+const submitApplication = async (req, res) => {
   try {
-    const properties = await Property.find({ listedBy: req.user.userId })
-      .populate('landlordId', 'fullName phone email')
-      .sort({ createdAt: -1 });
+    const { propertyId } = req.params;
+    const { moveInDate, monthlyBudget, occupancy, tenantMessage, urgency } = req.body;
+    
+    // Validate property exists and is available
+    const property = await Property.findById(propertyId);
+    if (!property) {
+      return res.status(404).json({ message: 'Property not found' });
+    }
+    
+    if (property.status !== 'available') {
+      return res.status(400).json({ message: 'Property is not available for application' });
+    }
 
-    // Get referral info for each property
-    const propertiesWithReferrals = await Promise.all(
-      properties.map(async (property) => {
-        const referral = await Referral.findOne({ propertyId: property._id });
-        return {
-          ...property.toObject(),
-          referral: referral
-        };
-      })
-    );
+    // Check if tenant already has pending application for this property
+    const existingApplication = await Application.findOne({
+      tenantId: req.user.userId,
+      propertyId: propertyId,
+      status: { $in: ['pending', 'reviewing'] }
+    });
 
-    res.json(propertiesWithReferrals);
+    if (existingApplication) {
+      return res.status(400).json({ message: 'You already have a pending application for this property' });
+    }
+
+    // Create application
+    const application = new Application({
+      tenantId: req.user.userId,
+      propertyId: propertyId,
+      landlordId: property.landlordId,
+      applicationData: {
+        moveInDate,
+        monthlyBudget,
+        occupancy,
+        tenantMessage,
+        urgency
+      }
+    });
+
+    await application.save();
+
+    res.status(201).json({
+      success: true,
+      message: 'Application submitted successfully',
+      data: application
+    });
   } catch (error) {
-    console.error('Get user properties error:', error);
+    console.error('Submit application error:', error);
     res.status(500).json({ 
-      message: 'Failed to fetch user properties', 
+      message: 'Failed to submit application', 
+      error: error.message 
+    });
+  }
+};
+
+// Get tenant's applications
+const getMyApplications = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, status } = req.query;
+    
+    const query = { tenantId: req.user.userId };
+    if (status) query.status = status;
+
+    const applications = await Application.find(query)
+      .populate({
+        path: 'propertyId',
+        select: 'title type location media rent deposit'
+      })
+      .populate('landlordId', 'fullName phoneNumber email')
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+
+    const total = await Application.countDocuments(query);
+
+    res.json({
+      success: true,
+      data: applications,
+      pagination: {
+        totalPages: Math.ceil(total / limit),
+        currentPage: parseInt(page),
+        total,
+        limit: parseInt(limit)
+      }
+    });
+  } catch (error) {
+    console.error('Get my applications error:', error);
+    res.status(500).json({ 
+      message: 'Failed to fetch applications', 
+      error: error.message 
+    });
+  }
+};
+
+// Withdraw application
+const withdrawApplication = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    
+    const application = await Application.findOne({
+      _id: applicationId,
+      tenantId: req.user.userId
+    });
+
+    if (!application) {
+      return res.status(404).json({ message: 'Application not found' });
+    }
+
+    if (application.status !== 'pending' && application.status !== 'reviewing') {
+      return res.status(400).json({ message: 'Cannot withdraw application in current status' });
+    }
+
+    application.status = 'withdrawn';
+    await application.save();
+
+    res.json({
+      success: true,
+      message: 'Application withdrawn successfully'
+    });
+  } catch (error) {
+    console.error('Withdraw application error:', error);
+    res.status(500).json({ 
+      message: 'Failed to withdraw application', 
       error: error.message 
     });
   }
 };
 
 // Search properties
-export const searchProperties = async (req, res) => {
+const searchProperties = async (req, res) => {
   try {
     const { 
       q, 
       type, 
       city, 
       lga, 
-      minPrice, 
-      maxPrice,
+      minRent, 
+      maxRent,
       page = 1, 
       limit = 12 
     } = req.query;
 
     const query = {
-      verificationStatus: 'approved',
-      status: 'listed'
+      status: 'available',
+      isActive: true
     };
 
     // Text search
@@ -190,9 +241,14 @@ export const searchProperties = async (req, res) => {
     if (type) query.type = type;
     if (city) query['location.city'] = { $regex: city, $options: 'i' };
     if (lga) query['location.lga'] = { $regex: lga, $options: 'i' };
+    if (minRent || maxRent) {
+      query['rent.amount'] = {};
+      if (minRent) query['rent.amount'].$gte = parseInt(minRent);
+      if (maxRent) query['rent.amount'].$lte = parseInt(maxRent);
+    }
 
     const properties = await Property.find(query)
-      .populate('listedBy', 'fullName username')
+      .populate('landlordId', 'fullName phoneNumber email')
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
@@ -200,10 +256,14 @@ export const searchProperties = async (req, res) => {
     const total = await Property.countDocuments(query);
 
     res.json({
-      properties,
-      totalPages: Math.ceil(total / limit),
-      currentPage: page,
-      total,
+      success: true,
+      data: properties,
+      pagination: {
+        totalPages: Math.ceil(total / limit),
+        currentPage: parseInt(page),
+        total,
+        limit: parseInt(limit)
+      },
       query: req.query
     });
   } catch (error) {
@@ -215,153 +275,12 @@ export const searchProperties = async (req, res) => {
   }
 };
 
-// Update property
-export const updateProperty = async (req, res) => {
-  try {
-    const property = await Property.findById(req.params.id);
-    
-    if (!property) {
-      return res.status(404).json({ message: 'Property not found' });
-    }
-
-    // Only allow the person who listed it to update
-    if (property.listedBy.toString() !== req.user.userId) {
-      return res.status(403).json({ message: 'Not authorized to update this property' });
-    }
-
-    const updates = req.body;
-    
-    // Reset verification status if significant changes made
-    if (updates.title || updates.location || updates.type) {
-      updates.verificationStatus = 'needs_verification';
-      updates.status = 'pending_review';
-    }
-
-    const updatedProperty = await Property.findByIdAndUpdate(
-      req.params.id,
-      updates,
-      { new: true, runValidators: true }
-    );
-
-    res.json(updatedProperty);
-  } catch (error) {
-    console.error('Update property error:', error);
-    res.status(500).json({ 
-      message: 'Failed to update property', 
-      error: error.message 
-    });
-  }
-};
-
-// Delete property
-export const deleteProperty = async (req, res) => {
-  try {
-    const property = await Property.findById(req.params.id);
-    
-    if (!property) {
-      return res.status(404).json({ message: 'Property not found' });
-    }
-
-    // Only allow the person who listed it to delete
-    if (property.listedBy.toString() !== req.user.userId) {
-      return res.status(403).json({ message: 'Not authorized to delete this property' });
-    }
-
-    await Property.findByIdAndDelete(req.params.id);
-    
-    // Also delete associated referral
-    await Referral.findOneAndDelete({ propertyId: req.params.id });
-
-    res.json({ message: 'Property deleted successfully' });
-  } catch (error) {
-    console.error('Delete property error:', error);
-    res.status(500).json({ 
-      message: 'Failed to delete property', 
-      error: error.message 
-    });
-  }
-};
-
-// Admin: Get pending properties
-export const getPendingProperties = async (req, res) => {
-  try {
-    const properties = await Property.find({ 
-      verificationStatus: { $in: ['pending', 'needs_verification'] }
-    })
-    .populate('listedBy', 'fullName username email phone')
-    .sort({ createdAt: -1 });
-
-    res.json(properties);
-  } catch (error) {
-    console.error('Get pending properties error:', error);
-    res.status(500).json({ 
-      message: 'Failed to fetch pending properties', 
-      error: error.message 
-    });
-  }
-};
-
-// Admin: Approve property
-export const approveProperty = async (req, res) => {
-  try {
-    const { landlordId, landlordContact } = req.body;
-    
-    const property = await Property.findByIdAndUpdate(
-      req.params.id,
-      {
-        verificationStatus: 'approved',
-        status: 'listed',
-        landlordId: landlordId || property.landlordId,
-        landlordContact: landlordContact || property.landlordContact
-      },
-      { new: true }
-    );
-
-    if (!property) {
-      return res.status(404).json({ message: 'Property not found' });
-    }
-
-    res.json({ 
-      message: 'Property approved successfully', 
-      property 
-    });
-  } catch (error) {
-    console.error('Approve property error:', error);
-    res.status(500).json({ 
-      message: 'Failed to approve property', 
-      error: error.message 
-    });
-  }
-};
-
-// Admin: Reject property
-export const rejectProperty = async (req, res) => {
-  try {
-    const { reason } = req.body;
-    
-    const property = await Property.findByIdAndUpdate(
-      req.params.id,
-      {
-        verificationStatus: 'rejected',
-        status: 'hidden',
-        rejectionReason: reason
-      },
-      { new: true }
-    );
-
-    if (!property) {
-      return res.status(404).json({ message: 'Property not found' });
-    }
-
-    res.json({ 
-      message: 'Property rejected', 
-      property 
-    });
-  } catch (error) {
-    console.error('Reject property error:', error);
-    res.status(500).json({ 
-      message: 'Failed to reject property', 
-      error: error.message 
-    });
-  }
+// Export all controller methods
+export {
+  getAvailableProperties,
+  getPropertyById,
+  submitApplication,
+  getMyApplications,
+  withdrawApplication,
+  searchProperties
 };

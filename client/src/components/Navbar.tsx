@@ -1,112 +1,166 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { FaSearch, FaUserCircle } from 'react-icons/fa';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
 export default function Navbar() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  
+  const { isAuthenticated, logout } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
   return (
-    <header className="bg-white shadow-sm">
-      {/* Main navbar */}
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
-          {/* Logo */}
-          <Link to="/" className="text-3xl font-bold text-green-700">
-            dwellio
-          </Link>
-          
-          {/* Search bar */}
-          <div className="relative flex-1 max-w-md mx-8">
-            <div className="flex items-center border border-gray-300 rounded-full overflow-hidden shadow-sm">
-              <input
-                type="text"
-                placeholder="Search locations, properties..."
-                className="flex-1 px-4 py-2 outline-none text-gray-700"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              <button className="bg-green-700 text-white p-2 hover:bg-green-800 transition">
-                <FaSearch className="w-4 h-4" />
-              </button>
-            </div>
+    <nav className="bg-primary-700 text-white shadow-lg">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
+          <div className="flex items-center">
+            <Link to="/" className="flex-shrink-0 flex items-center">
+              <span className="text-2xl font-bold font-display text-white">dwellio</span>
+            </Link>
           </div>
-          
-          {/* Navigation links */}
-          <div className="flex items-center gap-6">
-            <Link to="/properties" className="text-gray-700 hover:text-green-700 transition">Explore</Link>
-            <Link to="/manage" className="text-gray-700 hover:text-green-700 transition">Manage Rentals</Link>
+
+          {/* Desktop menu */}
+          <div className="hidden md:flex md:items-center md:space-x-4">
+            <Link to="/" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:text-gray-200">
+              Home
+            </Link>
             
-            {/* Profile dropdown */}
-            <div className="relative">
-              <button 
-                className="flex items-center gap-2 text-gray-700 hover:text-green-700 transition"
-                onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-              >
-                <FaUserCircle className="w-6 h-6" />
-                <span className="hidden md:inline">Account</span>
-              </button>
-              
-              {isProfileMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-10">
-                  <div className="py-1">
-                    <Link 
-                      to="/signin" 
-                      className="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-700"
-                      onClick={() => setIsProfileMenuOpen(false)}
-                    >
-                      Sign In
-                    </Link>
-                    <Link 
-                      to="/signup" 
-                      className="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-700"
-                      onClick={() => setIsProfileMenuOpen(false)}
-                    >
-                      Sign Up
-                    </Link>
-                    <hr className="my-1" />
-                    <Link 
-                      to="/advertise" 
-                      className="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-700"
-                      onClick={() => setIsProfileMenuOpen(false)}
-                    >
-                      List Your Property
-                    </Link>
-                    <Link 
-                      to="/help" 
-                      className="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-700"
-                      onClick={() => setIsProfileMenuOpen(false)}
-                    >
-                      Help
-                    </Link>
-                  </div>
-                </div>
+            {isAuthenticated ? (
+              <>
+                <Link to="/properties" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:text-gray-200">
+                  Properties
+                </Link>
+                <Link to="/applications" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:text-gray-200">
+                  My Applications
+                </Link>
+                <Link to="/tenant/dashboard" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:text-gray-200">
+                  Dashboard
+                </Link>
+                <Link to="/tenant/profile" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:text-gray-200">
+                  Profile
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="px-3 py-2 rounded-md text-sm font-medium text-white hover:text-red-300"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/signin" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:text-gray-200">
+                  Sign In
+                </Link>
+                <Link
+                  to="/signup"
+                  className="ml-3 px-4 py-2 rounded-md text-sm font-medium bg-white text-primary-700 hover:bg-gray-100"
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
+          </div>
+
+          {/* Mobile menu button */}
+          <div className="flex md:hidden items-center">
+            <button
+              type="button"
+              className="inline-flex items-center justify-center p-2 rounded-md text-white hover:text-gray-300 focus:outline-none"
+              aria-controls="mobile-menu"
+              aria-expanded="false"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              <span className="sr-only">Open main menu</span>
+              {mobileMenuOpen ? (
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
               )}
-            </div>
+            </button>
           </div>
         </div>
       </div>
-      
-      {/* Navigation tabs */}
-      <div className="container mx-auto px-4 py-3 border-t border-gray-100">
-        <div className="flex items-center space-x-8 overflow-x-auto whitespace-nowrap">
-          <Link to="/" className="text-gray-700 hover:text-green-700 font-medium pb-2 border-b-2 border-green-700">
-            Rent
-          </Link>
-          <Link to="/buy" className="text-gray-700 hover:text-green-700 pb-2 border-b-2 border-transparent hover:border-green-700 transition-colors">
-            Buy
-          </Link>
-          <Link to="/sell" className="text-gray-700 hover:text-green-700 pb-2 border-b-2 border-transparent hover:border-green-700 transition-colors">
-            Sell
-          </Link>
-          <Link to="/mortgage" className="text-gray-700 hover:text-green-700 pb-2 border-b-2 border-transparent hover:border-green-700 transition-colors">
-            Mortgage
-          </Link>
-          <Link to="/agents" className="text-gray-700 hover:text-green-700 pb-2 border-b-2 border-transparent hover:border-green-700 transition-colors">
-            Find Agents
-          </Link>
+
+      {/* Mobile menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-primary-700" id="mobile-menu">
+          <div className="pt-2 pb-3 space-y-1 px-2">
+            <Link 
+              to="/" 
+              className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-primary-600"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Home
+            </Link>
+            
+            {isAuthenticated ? (
+              <>
+                <Link
+                  to="/properties"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-primary-600"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Properties
+                </Link>
+                <Link
+                  to="/applications"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-primary-600"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  My Applications
+                </Link>
+                <Link
+                  to="/tenant/dashboard"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-primary-600"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  to="/tenant/profile"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-primary-600"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Profile
+                </Link>
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-white hover:bg-red-700"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/signin"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-primary-600"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/signup"
+                  className="block px-3 py-2 rounded-md text-base font-medium bg-white text-primary-700 my-2 mx-2 hover:bg-gray-100"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
+          </div>
         </div>
-      </div>
-    </header>
+      )}
+    </nav>
   );
 }
