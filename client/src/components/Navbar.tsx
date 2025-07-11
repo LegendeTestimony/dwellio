@@ -13,7 +13,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-primary-700 text-white shadow-lg">
+    <nav className="bg-aztec-950 text-white shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
@@ -24,39 +24,39 @@ export default function Navbar() {
 
           {/* Desktop menu */}
           <div className="hidden md:flex md:items-center md:space-x-4">
-            <Link to="/" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:text-gray-200">
+            <Link to="/" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:text-gray-200 transition-colors">
               Home
             </Link>
             
             {isAuthenticated ? (
               <>
-                <Link to="/properties" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:text-gray-200">
+                <Link to="/properties" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:text-gray-200 transition-colors">
                   Properties
                 </Link>
-                <Link to="/applications" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:text-gray-200">
+                <Link to="/applications" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:text-gray-200 transition-colors">
                   My Applications
                 </Link>
-                <Link to="/tenant/dashboard" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:text-gray-200">
+                <Link to="/dashboard" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:text-gray-200 transition-colors">
                   Dashboard
                 </Link>
-                <Link to="/tenant/profile" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:text-gray-200">
+                <Link to="/tenant/profile" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:text-gray-200 transition-colors">
                   Profile
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="px-3 py-2 rounded-md text-sm font-medium text-white hover:text-red-300"
+                  className="px-3 py-2 rounded-md text-sm font-medium text-white hover:text-red-300 transition-colors"
                 >
                   Logout
                 </button>
               </>
             ) : (
               <>
-                <Link to="/signin" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:text-gray-200">
+                <Link to="/signin" className="px-3 py-2 rounded-md text-sm font-medium text-white hover:text-gray-200 transition-colors">
                   Sign In
                 </Link>
                 <Link
                   to="/signup"
-                  className="ml-3 px-4 py-2 rounded-md text-sm font-medium bg-white text-primary-700 hover:bg-gray-100"
+                  className="ml-3 px-4 py-2 rounded-md text-sm font-medium border border-white text-white hover:bg-white/20 transition-colors"
                 >
                   Sign Up
                 </Link>
@@ -68,7 +68,7 @@ export default function Navbar() {
           <div className="flex md:hidden items-center">
             <button
               type="button"
-              className="inline-flex items-center justify-center p-2 rounded-md text-white hover:text-gray-300 focus:outline-none"
+              className="inline-flex items-center justify-center p-2 rounded-md text-white hover:text-gray-300 hover:bg-aztec-800 focus:outline-none transition-colors"
               aria-controls="mobile-menu"
               aria-expanded="false"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -90,11 +90,11 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-primary-700" id="mobile-menu">
+        <div className="md:hidden bg-aztec-800" id="mobile-menu">
           <div className="pt-2 pb-3 space-y-1 px-2">
             <Link 
               to="/" 
-              className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-primary-600"
+              className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-aztec-700 transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               Home
@@ -102,30 +102,30 @@ export default function Navbar() {
             
             {isAuthenticated ? (
               <>
-                <Link
-                  to="/properties"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-primary-600"
+                <Link 
+                  to="/properties" 
+                  className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-aztec-700 transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Properties
                 </Link>
-                <Link
-                  to="/applications"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-primary-600"
+                <Link 
+                  to="/applications" 
+                  className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-aztec-700 transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   My Applications
                 </Link>
-                <Link
-                  to="/tenant/dashboard"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-primary-600"
+                <Link 
+                  to="/tenant/dashboard" 
+                  className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-aztec-700 transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Dashboard
                 </Link>
-                <Link
-                  to="/tenant/profile"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-primary-600"
+                <Link 
+                  to="/tenant/profile" 
+                  className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-aztec-700 transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Profile
@@ -135,23 +135,23 @@ export default function Navbar() {
                     handleLogout();
                     setMobileMenuOpen(false);
                   }}
-                  className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-white hover:bg-red-700"
+                  className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-white hover:text-red-300 hover:bg-aztec-700 transition-colors"
                 >
                   Logout
                 </button>
               </>
             ) : (
               <>
-                <Link
-                  to="/signin"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-primary-600"
+                <Link 
+                  to="/signin" 
+                  className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-aztec-700 transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Sign In
                 </Link>
-                <Link
-                  to="/signup"
-                  className="block px-3 py-2 rounded-md text-base font-medium bg-white text-primary-700 my-2 mx-2 hover:bg-gray-100"
+                <Link 
+                  to="/signup" 
+                  className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-aztec-700 transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Sign Up

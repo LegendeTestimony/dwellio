@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { tenantApi } from '../services/api';
-import { FaUpload, FaCheck, FaExclamationTriangle, FaUser, FaHome, FaFileAlt } from 'react-icons/fa';
+import { FaUpload, FaCheck, FaExclamationTriangle, FaUser, FaHome, FaFileAlt, FaBriefcase, FaPhoneAlt, FaIdCard, FaFileInvoiceDollar, FaUserFriends, FaCamera, FaTrash } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import type { Document, User } from '../types';
 
@@ -27,12 +27,42 @@ interface PersonalInfoForm {
   emergencyContactRelationship: string;
 }
 
+interface HouseImage {
+  id: string;
+  category: 'aerial_view' | 'sitting_room' | 'bedroom' | 'kitchen' | 'bathroom' | 'exterior' | 'other';
+  url: string;
+  fileName: string;
+  uploadedAt: string;
+}
+
+interface HouseInfo {
+  images: HouseImage[];
+  features: string[];
+  amenities: string[];
+  description: string;
+  size: string;
+  bedrooms: number;
+  bathrooms: number;
+  yearBuilt: string;
+  propertyType: string;
+}
+
+// Demo image URLs for document placeholder images
+const documentPlaceholders = {
+  id_card: 'https://images.unsplash.com/photo-1590002893730-1d0ff5fd892e?w=600&auto=format&fit=crop',
+  utility_bill: 'https://images.unsplash.com/photo-1544377193-33dcf4d68fb5?w=600&auto=format&fit=crop',
+  bank_statement: 'https://images.unsplash.com/photo-1567427018141-0584cfcbf1b8?w=600&auto=format&fit=crop',
+  employment_letter: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=600&auto=format&fit=crop',
+  passport: 'https://images.unsplash.com/photo-1618033221317-5f369d382c2b?w=600&auto=format&fit=crop'
+};
+
 export default function TenantProfile() {
   const { user, updateUserContext } = useAuth();
-  const [activeTab, setActiveTab] = useState<'personal' | 'documents' | 'residence'>('personal');
+  const [activeTab, setActiveTab] = useState<'personal' | 'documents' | 'residence' | 'house'>('personal');
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(false);
   const [profileCompletion, setProfileCompletion] = useState(0);
+  const [uploadingDocType, setUploadingDocType] = useState<string | null>(null);
 
   // Personal Information State
   const [personalInfo, setPersonalInfo] = useState<PersonalInfoForm>({
@@ -57,6 +87,49 @@ export default function TenantProfile() {
     leaseEndDate: user?.tenantProfile?.currentResidence?.leaseEndDate || ''
   });
 
+  // House Information State
+  const [houseInfo, setHouseInfo] = useState<HouseInfo>({
+    images: [],
+    features: [],
+    amenities: [],
+    description: '',
+    size: '',
+    bedrooms: 0,
+    bathrooms: 0,
+    yearBuilt: '',
+    propertyType: ''
+  });
+
+  // Saving states for various forms
+  const [savingPersonal, setSavingPersonal] = useState(false);
+  const [savingResidence, setSavingResidence] = useState(false);
+  const [savingHouse, setSavingHouse] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Predefined options for features and amenities
+  const houseFeatures = [
+    'Air Conditioning', 'Balcony', 'Basement', 'Ceiling Fans', 'Central Heating',
+    'Fireplace', 'Garage', 'Garden', 'Hardwood Floors', 'High Ceilings',
+    'In-unit Laundry', 'Kitchen Island', 'Patio', 'Walk-in Closet', 'Storage Space'
+  ];
+
+  const houseAmenities = [
+    'Swimming Pool', 'Gym/Fitness Center', 'Parking', 'Security System',
+    'Elevator', 'Concierge', 'Rooftop Access', 'Business Center',
+    'Children\'s Play Area', 'BBQ Area', 'Tennis Court', 'Clubhouse',
+    'Package Receiving', 'Bike Storage', 'Pet-Friendly'
+  ];
+
+  const imageCategories = [
+    { key: 'aerial_view', label: 'Aerial View' },
+    { key: 'sitting_room', label: 'Sitting Room' },
+    { key: 'bedroom', label: 'Bedroom' },
+    { key: 'kitchen', label: 'Kitchen' },
+    { key: 'bathroom', label: 'Bathroom' },
+    { key: 'exterior', label: 'Exterior' },
+    { key: 'other', label: 'Other' }
+  ];
+
   useEffect(() => {
     // Load profile data and calculate completion
     const loadProfile = async () => {
@@ -78,7 +151,7 @@ export default function TenantProfile() {
             employerName: userData.tenantProfile?.employerName || '',
             emergencyContactName: userData.tenantProfile?.emergencyContactName || '',
             emergencyContactPhone: userData.tenantProfile?.emergencyContactPhone || '',
-            emergencyContactRelationship: ''
+            emergencyContactRelationship: userData.tenantProfile?.emergencyContactRelationship || ''
           });
           
           // Update residence form
@@ -86,12 +159,29 @@ export default function TenantProfile() {
             address: userData.tenantProfile?.currentResidence?.address || '',
             landlordName: userData.tenantProfile?.currentResidence?.landlordName || '',
             landlordPhone: userData.tenantProfile?.currentResidence?.landlordPhone || '',
-            moveInDate: userData.tenantProfile?.currentResidence?.moveInDate || '',
-            leaseEndDate: userData.tenantProfile?.currentResidence?.leaseEndDate || ''
+            moveInDate: userData.tenantProfile?.currentResidence?.moveInDate 
+              ? new Date(userData.tenantProfile.currentResidence.moveInDate).toISOString().split('T')[0] 
+              : '',
+            leaseEndDate: userData.tenantProfile?.currentResidence?.leaseEndDate 
+              ? new Date(userData.tenantProfile.currentResidence.leaseEndDate).toISOString().split('T')[0] 
+              : ''
           });
           
           // Set documents
           setDocuments(userData.tenantProfile?.documents || []);
+          
+          // Set house information
+          setHouseInfo(userData.tenantProfile?.houseInfo || {
+            images: [],
+            features: [],
+            amenities: [],
+            description: '',
+            size: '',
+            bedrooms: 0,
+            bathrooms: 0,
+            yearBuilt: '',
+            propertyType: ''
+          });
           
           // Update user context
           updateUserContext(userData);
@@ -111,11 +201,11 @@ export default function TenantProfile() {
     };
 
     loadProfile();
-  }, [updateUserContext]);
+  }, []); // Empty dependency array - only run once on mount
 
   const handlePersonalInfoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setSavingPersonal(true);
     
     try {
       const updateData = {
@@ -127,7 +217,8 @@ export default function TenantProfile() {
           monthlyIncome: parseInt(personalInfo.monthlyIncome, 10),
           employerName: personalInfo.employerName,
           emergencyContactName: personalInfo.emergencyContactName,
-          emergencyContactPhone: personalInfo.emergencyContactPhone
+          emergencyContactPhone: personalInfo.emergencyContactPhone,
+          emergencyContactRelationship: personalInfo.emergencyContactRelationship
         }
       };
       
@@ -147,13 +238,13 @@ export default function TenantProfile() {
       console.error('Failed to update profile:', error);
       toast.error('Failed to update profile');
     } finally {
-      setLoading(false);
+      setSavingPersonal(false);
     }
   };
 
   const handleResidenceSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setSavingResidence(true);
     
     try {
       const updateData = {
@@ -184,8 +275,122 @@ export default function TenantProfile() {
       console.error('Failed to update residence:', error);
       toast.error('Failed to update residence information');
     } finally {
-      setLoading(false);
+      setSavingResidence(false);
     }
+  };
+
+  const handleHouseImageUpload = async (category: HouseImage['category'], file: File) => {
+    setUploadingImage(true);
+    
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('category', category);
+      
+      const response = await tenantApi.uploadHouseImage(formData);
+      
+      if (response.success && response.data) {
+        const newImage: HouseImage = {
+          id: response.data.id,
+          category,
+          url: response.data.url,
+          fileName: file.name,
+          uploadedAt: new Date().toISOString()
+        };
+        
+        setHouseInfo(prev => ({
+          ...prev,
+          images: [...prev.images, newImage]
+        }));
+        
+        toast.success('House image uploaded successfully!');
+      } else {
+        toast.error('Failed to upload house image');
+      }
+    } catch (error) {
+      console.error('Failed to upload house image:', error);
+      toast.error('Failed to upload house image');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleRemoveHouseImage = async (imageId: string) => {
+    try {
+      const response = await tenantApi.deleteHouseImage(imageId);
+      
+      if (response.success) {
+        setHouseInfo(prev => ({
+          ...prev,
+          images: prev.images.filter(img => img.id !== imageId)
+        }));
+        
+        toast.success('Image removed successfully!');
+      } else {
+        toast.error('Failed to remove image');
+      }
+    } catch (error) {
+      console.error('Failed to remove image:', error);
+      toast.error('Failed to remove image');
+    }
+  };
+
+  const handleHouseInfoSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingHouse(true);
+    
+    try {
+      const updateData = {
+        tenantProfile: {
+          houseInfo: {
+            features: houseInfo.features,
+            amenities: houseInfo.amenities,
+            description: houseInfo.description,
+            size: houseInfo.size,
+            bedrooms: houseInfo.bedrooms,
+            bathrooms: houseInfo.bathrooms,
+            yearBuilt: houseInfo.yearBuilt,
+            propertyType: houseInfo.propertyType
+          }
+        }
+      };
+      
+      const response = await tenantApi.updateProfile(updateData);
+      
+      if (response.success) {
+        toast.success('House information updated successfully!');
+        // Refresh profile data
+        const profileResponse = await tenantApi.getProfile();
+        if (profileResponse.success && profileResponse.data) {
+          updateUserContext(profileResponse.data);
+        }
+      } else {
+        toast.error('Failed to update house information');
+      }
+    } catch (error) {
+      console.error('Failed to update house information:', error);
+      toast.error('Failed to update house information');
+    } finally {
+      setSavingHouse(false);
+    }
+  };
+
+  const toggleFeature = (feature: string) => {
+    setHouseInfo(prev => ({
+      ...prev,
+      features: prev.features.includes(feature)
+        ? prev.features.filter(f => f !== feature)
+        : [...prev.features, feature]
+    }));
+  };
+
+  const toggleAmenity = (amenity: string) => {
+    setHouseInfo(prev => ({
+      ...prev,
+      amenities: prev.amenities.includes(amenity)
+        ? prev.amenities.filter(a => a !== amenity)
+        : [...prev.amenities, amenity]
+    }));
   };
 
   const handleDocumentUpload = async (documentType: string, file: File) => {
@@ -260,6 +465,16 @@ export default function TenantProfile() {
               {status}
             </span>
           </p>
+        )}
+        {/* Demo image placeholder */}
+        {status === 'missing' && (
+          <div className="mt-4">
+            <img
+              src={documentPlaceholders[type]}
+              alt={`${title} placeholder`}
+              className="w-full h-auto rounded-md border"
+            />
+          </div>
         )}
       </div>
     );
@@ -336,6 +551,17 @@ export default function TenantProfile() {
               >
                 <FaHome className="inline mr-2" />
                 Current Residence
+              </button>
+              <button
+                onClick={() => setActiveTab('house')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'house'
+                    ? 'border-primary-600 text-primary-700'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <FaCamera className="inline mr-2" />
+                House Information
               </button>
             </nav>
           </div>
@@ -466,10 +692,10 @@ export default function TenantProfile() {
                 <div className="flex justify-end">
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={savingPersonal || loading}
                     className="bg-primary-700 text-white px-6 py-3 rounded-md hover:bg-primary-800 disabled:opacity-50"
                   >
-                    {loading ? 'Saving...' : 'Save Personal Information'}
+                    {savingPersonal ? 'Saving...' : 'Save Personal Information'}
                   </button>
                 </div>
               </form>
@@ -568,13 +794,198 @@ export default function TenantProfile() {
                 <div className="flex justify-end">
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={savingResidence || loading}
                     className="bg-primary-700 text-white px-6 py-3 rounded-md hover:bg-primary-800 disabled:opacity-50"
                   >
-                    {loading ? 'Saving...' : 'Save Residence Information'}
+                    {savingResidence ? 'Saving...' : 'Save Residence Information'}
                   </button>
                 </div>
               </form>
+            )}
+
+            {/* House Information Tab */}
+            {activeTab === 'house' && (
+              <div className="space-y-8">
+                {/* House Images Section */}
+                <div className="bg-gray-50 rounded-lg p-6">
+                  <h3 className="text-lg font-semibold mb-4">House Images</h3>
+                  <p className="text-gray-600 mb-6">Upload images of your house in different categories</p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {imageCategories.map(category => (
+                      <div key={category.key} className="bg-white rounded-lg p-4 border">
+                        <h4 className="font-medium mb-2">{category.label}</h4>
+                        
+                        {/* Show existing images for this category */}
+                        {houseInfo.images
+                          .filter(img => img.category === category.key)
+                          .map(image => (
+                            <div key={image.id} className="mb-3 relative">
+                              <img 
+                                src={image.url} 
+                                alt={category.label}
+                                className="w-full h-32 object-cover rounded-md"
+                              />
+                              <button
+                                onClick={() => handleRemoveHouseImage(image.id)}
+                                className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                              >
+                                <FaTrash className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))}
+                        
+                        {/* Upload button */}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleHouseImageUpload(category.key as HouseImage['category'], file);
+                            }
+                          }}
+                          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+                          disabled={uploadingImage}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* House Details Form */}
+                <form onSubmit={handleHouseInfoSubmit} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Property Type
+                      </label>
+                      <select
+                        value={houseInfo.propertyType}
+                        onChange={(e) => setHouseInfo(prev => ({ ...prev, propertyType: e.target.value }))}
+                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-primary-600 focus:border-primary-600"
+                      >
+                        <option value="">Select property type</option>
+                        <option value="apartment">Apartment</option>
+                        <option value="house">House</option>
+                        <option value="condo">Condo</option>
+                        <option value="townhouse">Townhouse</option>
+                        <option value="studio">Studio</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Size (sq ft)
+                      </label>
+                      <input
+                        type="text"
+                        value={houseInfo.size}
+                        onChange={(e) => setHouseInfo(prev => ({ ...prev, size: e.target.value }))}
+                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-primary-600 focus:border-primary-600"
+                        placeholder="e.g., 1200"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Bedrooms
+                      </label>
+                      <input
+                        type="number"
+                        value={houseInfo.bedrooms}
+                        onChange={(e) => setHouseInfo(prev => ({ ...prev, bedrooms: parseInt(e.target.value) || 0 }))}
+                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-primary-600 focus:border-primary-600"
+                        min="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Bathrooms
+                      </label>
+                      <input
+                        type="number"
+                        value={houseInfo.bathrooms}
+                        onChange={(e) => setHouseInfo(prev => ({ ...prev, bathrooms: parseInt(e.target.value) || 0 }))}
+                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-primary-600 focus:border-primary-600"
+                        min="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Year Built
+                      </label>
+                      <input
+                        type="text"
+                        value={houseInfo.yearBuilt}
+                        onChange={(e) => setHouseInfo(prev => ({ ...prev, yearBuilt: e.target.value }))}
+                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-primary-600 focus:border-primary-600"
+                        placeholder="e.g., 2020"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Description
+                      </label>
+                      <textarea
+                        value={houseInfo.description}
+                        onChange={(e) => setHouseInfo(prev => ({ ...prev, description: e.target.value }))}
+                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-primary-600 focus:border-primary-600"
+                        rows={4}
+                        placeholder="Describe your house..."
+                      />
+                    </div>
+                  </div>
+
+                  {/* Features Section */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      House Features
+                    </label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {houseFeatures.map(feature => (
+                        <label key={feature} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={houseInfo.features.includes(feature)}
+                            onChange={() => toggleFeature(feature)}
+                            className="rounded border-gray-300 text-primary-600 focus:ring-primary-600"
+                          />
+                          <span className="text-sm text-gray-700">{feature}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Amenities Section */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Amenities
+                    </label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {houseAmenities.map(amenity => (
+                        <label key={amenity} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={houseInfo.amenities.includes(amenity)}
+                            onChange={() => toggleAmenity(amenity)}
+                            className="rounded border-gray-300 text-primary-600 focus:ring-primary-600"
+                          />
+                          <span className="text-sm text-gray-700">{amenity}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={savingHouse || loading}
+                      className="bg-primary-700 text-white px-6 py-3 rounded-md hover:bg-primary-800 disabled:opacity-50"
+                    >
+                      {savingHouse ? 'Saving...' : 'Save House Information'}
+                    </button>
+                  </div>
+                </form>
+              </div>
             )}
           </div>
         </div>

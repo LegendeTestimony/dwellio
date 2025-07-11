@@ -15,6 +15,10 @@ const TenantDashboard = lazy(() => import('./pages/TenantDashboard'));
 const TenantProfile = lazy(() => import('./pages/TenantProfile'));
 const MoveOutIntent = lazy(() => import('./pages/MoveOutIntent'));
 const Applications = lazy(() => import('./pages/Applications'));
+const MyApplications = lazy(() => import('./pages/MyApplications'));
+const MyDocuments = lazy(() => import('./pages/MyDocuments'));
+const PaymentHistory = lazy(() => import('./pages/PaymentHistory'));
+const MyProfile = lazy(() => import('./pages/MyProfile'));
 
 // Fallback loading component
 const PageLoader = () => (
@@ -62,6 +66,38 @@ function App() {
             <ProtectedRoute>
               <Suspense fallback={<PageLoader />}>
                 <Applications />
+              </Suspense>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/my-applications" element={
+            <ProtectedRoute>
+              <Suspense fallback={<PageLoader />}>
+                <MyApplications />
+              </Suspense>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/my-documents" element={
+            <ProtectedRoute>
+              <Suspense fallback={<PageLoader />}>
+                <MyDocuments />
+              </Suspense>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/payment-history" element={
+            <ProtectedRoute>
+              <Suspense fallback={<PageLoader />}>
+                <PaymentHistory />
+              </Suspense>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/my-profile" element={
+            <ProtectedRoute>
+              <Suspense fallback={<PageLoader />}>
+                <MyProfile />
               </Suspense>
             </ProtectedRoute>
           } />

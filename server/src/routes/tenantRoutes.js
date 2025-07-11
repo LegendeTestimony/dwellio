@@ -5,10 +5,13 @@ import {
   updateTenantProfile,
   uploadVerificationDocument,
   submitMoveOutIntent,
-  getTenantDashboardStats
+  getTenantDashboardStats,
+  uploadHouseImage,
+  deleteHouseImage
 } from '../controllers/tenantController.js';
 import { requireAuth } from '../controllers/authController.js';
 import { uploadSingleFile } from '../middleware/upload.js';
+import { uploadSingleImage } from '../middleware/houseImageUpload.js';
 
 const router = express.Router();
 
@@ -27,5 +30,9 @@ router.post('/move-out-intent', submitMoveOutIntent);
 
 // Dashboard stats
 router.get('/dashboard/stats', getTenantDashboardStats);
+
+// House image management
+router.post('/house-images', uploadSingleImage, uploadHouseImage);
+router.delete('/house-images/:imageId', deleteHouseImage);
 
 export default router;

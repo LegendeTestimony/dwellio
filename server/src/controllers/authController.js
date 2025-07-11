@@ -144,7 +144,7 @@ export const requestPasswordReset = async (req, res) => {
         pass: process.env.SMTP_PASS,
       },
     });
-    const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
+    const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:4000'}/reset-password/${resetToken}`;
     await transporter.sendMail({
       to: user.email,
       subject: 'Password Reset Request',
@@ -209,7 +209,7 @@ export const requestEmailVerification = async (req, res) => {
         pass: process.env.SMTP_PASS,
       },
     });
-    const verifyUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/verify-email/${verifyToken}`;
+    const verifyUrl = `${process.env.CLIENT_URL || 'http://localhost:4000'}/verify-email/${verifyToken}`;
     await transporter.sendMail({
       to: targetUser.email,
       subject: 'Verify Your Email',

@@ -47,6 +47,7 @@ const userSchema = new mongoose.Schema(
       monthlyIncome: { type: Number },
       emergencyContactName: { type: String },
       emergencyContactPhone: { type: String },
+      emergencyContactRelationship: { type: String },
       guarantorName: { type: String },
       guarantorPhone: { type: String },
       guarantorEmail: { type: String },
@@ -79,6 +80,28 @@ const userSchema = new mongoose.Schema(
         propertyType: { type: String },
         facilitationRequested: { type: Boolean, default: false },
         status: { type: String, enum: ['pending', 'searching', 'matched', 'completed'], default: 'pending' }
+      },
+      // House information
+      houseInfo: {
+        images: [{
+          id: { type: String },
+          category: { 
+            type: String, 
+            enum: ['aerial_view', 'sitting_room', 'bedroom', 'kitchen', 'bathroom', 'exterior', 'other'] 
+          },
+          url: { type: String },
+          publicId: { type: String }, // Cloudinary public ID for deletion
+          fileName: { type: String },
+          uploadedAt: { type: Date, default: Date.now }
+        }],
+        features: [{ type: String }],
+        amenities: [{ type: String }],
+        description: { type: String },
+        size: { type: String },
+        bedrooms: { type: Number, default: 0 },
+        bathrooms: { type: Number, default: 0 },
+        yearBuilt: { type: String },
+        propertyType: { type: String, enum: ['apartment', 'house', 'condo', 'townhouse', 'studio'] }
       }
     },
     // Verification status

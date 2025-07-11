@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, type ReactNode } from 'react';
+import React, { createContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { authApi } from '../services/api';
 import type { User, LoginCredentials, SignupData } from '../types';
 
@@ -83,9 +83,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsAuthenticated(false);
   };
 
-  const updateUserContext = (updatedUser: User) => {
+  const updateUserContext = useCallback((updatedUser: User) => {
     setUser(updatedUser);
-  };
+  }, []);
 
   const value: AuthContextType = {
     user,

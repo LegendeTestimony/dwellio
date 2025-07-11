@@ -1,5 +1,5 @@
 /** @type {import('tailwindcss').Config} */
-export default {
+module.exports = {
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -7,18 +7,33 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Our new primary color (dark forest green)
+        // Our primary color - Aztec palette
+        aztec: {
+          50: '#f5f8f6',
+          100: '#ddeae2',
+          200: '#bbd4c6',
+          300: '#92b6a4',
+          400: '#6b9681',
+          500: '#517b68',
+          600: '#3f6252',
+          700: '#355044',
+          800: '#2d4238',
+          900: '#293832',
+          950: '#17241f',
+        },
+        // Keep primary as an alias to aztec for backward compatibility
         primary: {
-          50: '#ecf0ed',
-          100: '#d0d9d4',
-          200: '#b0bfb5',
-          300: '#91a596',
-          400: '#718b78',
-          500: '#51705a',
-          600: '#3e584a',
-          700: '#17241f', // Our main color (requested by user)
-          800: '#0e1512',
-          900: '#050706',
+          50: '#f5f8f6',
+          100: '#ddeae2',
+          200: '#bbd4c6',
+          300: '#92b6a4',
+          400: '#6b9681',
+          500: '#517b68',
+          600: '#3f6252',
+          700: '#355044',
+          800: '#2d4238',
+          900: '#293832',
+          950: '#17241f',
         },
         // Accent colors that work well with our primary
         accent: {
@@ -52,6 +67,7 @@ export default {
       },
       fontFamily: {
         sans: ['"Inter"', 'sans-serif'],
+        inter: ['"Inter"', 'sans-serif'],
         display: ['"Outfit"', 'sans-serif'],
       },
       boxShadow: {

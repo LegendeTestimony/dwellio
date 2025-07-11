@@ -1,1 +1,19 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
+
+@theme {
+  --color-aztec-50: #f5f8f6;
+  --color-aztec-100: #ddeae2;
+  --color-aztec-200: #bbd4c6;
+  --color-aztec-300: #92b6a4;
+  --color-aztec-400: #6b9681;
+  --color-aztec-500: #517b68;
+  --color-aztec-600: #3f6252;
+  --color-aztec-700: #355044;
+  --color-aztec-800: #2d4238;
+  --color-aztec-900: #293832;
+  --color-aztec-950: #17241f;
+  
+  --font-family-sans: "Inter", sans-serif;
+  --font-family-inter: "Inter", sans-serif;
+}

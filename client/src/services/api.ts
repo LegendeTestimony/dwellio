@@ -112,6 +112,25 @@ export const tenantApi = {
       headers: getAuthHeaders()
     });
     return handleResponse(response);
+  },
+
+  async uploadHouseImage(formData: FormData): Promise<ApiResponse<{ id: string; url: string; publicId: string }>> {
+    const response = await fetch(`${API_BASE_URL}/tenant/house-images`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: formData
+    });
+    return handleResponse(response);
+  },
+
+  async deleteHouseImage(imageId: string): Promise<ApiResponse<{ message: string }>> {
+    const response = await fetch(`${API_BASE_URL}/tenant/house-images/${imageId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    return handleResponse(response);
   }
 };
 

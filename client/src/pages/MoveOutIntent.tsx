@@ -1,15 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { FaHome, FaCalendar, FaMapMarkerAl                <div className="flex justify-end mt-6">
-                  <button
-                    type="button"
-                    onClick={nextStep}
-                    className="bg-primary-700 text-white px-6 py-3 rounded-md hover:bg-primary-800"
-                  >
-                    Continue
-                  </button>
-                </div>yBillWave } from 'react-icons/fa';
+import { FaHome, FaCalendar, FaMoneyBillWave } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { tenantApi } from '../services/api';
 
@@ -96,13 +88,13 @@ export default function MoveOutIntent() {
       {[1, 2, 3].map((stepNumber) => (
         <div key={stepNumber} className="flex items-center">
           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-            step >= stepNumber ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-600'
+            step >= stepNumber ? 'bg-aztec-600 text-white' : 'bg-gray-200 text-gray-600'
           }`}>
             {stepNumber}
           </div>
           {stepNumber < 3 && (
             <div className={`w-12 h-1 mx-2 ${
-              step > stepNumber ? 'bg-primary-600' : 'bg-gray-200'
+              step > stepNumber ? 'bg-aztec-600' : 'bg-gray-200'
             }`}></div>
           )}
         </div>
@@ -122,7 +114,7 @@ export default function MoveOutIntent() {
             </div>
             <Link
               to="/dashboard"
-              className="text-primary-700 hover:text-primary-800 font-medium"
+              className="text-aztec-700 hover:text-aztec-800 font-medium"
             >
               ← Back to Dashboard
             </Link>
@@ -130,7 +122,7 @@ export default function MoveOutIntent() {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-lg shadow-sm p-8">
           <StepIndicator />
 
@@ -144,50 +136,80 @@ export default function MoveOutIntent() {
                   <p className="text-gray-600">Tell us when you'd like to move and your preferred location</p>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Target Move Date *
-                  </label>
-                  <input
-                    type="date"
-                    value={preferences.targetMoveDate}
-                    onChange={(e) => setPreferences(prev => ({ ...prev, targetMoveDate: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-primary-600 focus:border-primary-600"
-                    required
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Target Move Date *
+                    </label>
+                    <input
+                      type="date"
+                      value={preferences.targetMoveDate}
+                      onChange={(e) => setPreferences(prev => ({ ...prev, targetMoveDate: e.target.value }))}
+                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-aztec-600 focus:border-aztec-600"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Preferred Location *
+                    </label>
+                    <select
+                      value={preferences.preferredLocation}
+                      onChange={(e) => setPreferences(prev => ({ ...prev, preferredLocation: e.target.value }))}
+                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-aztec-600 focus:border-aztec-600"
+                      required
+                    >
+                      <option value="">Select Area</option>
+                      <option value="Maitama">Maitama</option>
+                      <option value="Asokoro">Asokoro</option>
+                      <option value="Garki">Garki</option>
+                      <option value="Wuse">Wuse</option>
+                      <option value="Gwarinpa">Gwarinpa</option>
+                      <option value="Kubwa">Kubwa</option>
+                      <option value="Jahi">Jahi</option>
+                      <option value="Utako">Utako</option>
+                      <option value="Kado">Kado</option>
+                      <option value="Life Camp">Life Camp</option>
+                      <option value="Lugbe">Lugbe</option>
+                      <option value="Nyanya">Nyanya</option>
+                    </select>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Preferred Location *
-                  </label>
-                  <select
-                    value={preferences.preferredLocation}
-                    onChange={(e) => setPreferences(prev => ({ ...prev, preferredLocation: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-primary-600 focus:border-primary-600"
-                    required
-                  >
-                    <option value="">Select Area</option>
-                    <option value="Maitama">Maitama</option>
-                    <option value="Asokoro">Asokoro</option>
-                    <option value="Garki">Garki</option>
-                    <option value="Wuse">Wuse</option>
-                    <option value="Gwarinpa">Gwarinpa</option>
-                    <option value="Kubwa">Kubwa</option>
-                    <option value="Jahi">Jahi</option>
-                    <option value="Utako">Utako</option>
-                    <option value="Kado">Kado</option>
-                    <option value="Life Camp">Life Camp</option>
-                    <option value="Lugbe">Lugbe</option>
-                    <option value="Nyanya">Nyanya</option>
-                  </select>
+                <div className="mt-4">
+                  <h3 className="text-sm font-medium text-gray-700 mb-3">Example Properties in Your Area</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="bg-aztec-50 rounded-lg overflow-hidden shadow-sm border border-aztec-100">
+                      <img 
+                        src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=870&q=80" 
+                        alt="Sample property"
+                        className="w-full h-32 object-cover" 
+                      />
+                      <div className="p-3">
+                        <p className="font-medium text-aztec-900">Modern Apartment</p>
+                        <p className="text-sm text-gray-600">Maitama, Abuja</p>
+                      </div>
+                    </div>
+                    <div className="bg-aztec-50 rounded-lg overflow-hidden shadow-sm border border-aztec-100">
+                      <img 
+                        src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=870&q=80" 
+                        alt="Sample property"
+                        className="w-full h-32 object-cover" 
+                      />
+                      <div className="p-3">
+                        <p className="font-medium text-aztec-900">Luxury Villa</p>
+                        <p className="text-sm text-gray-600">Asokoro, Abuja</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex justify-end">
                   <button
                     type="button"
                     onClick={nextStep}
-                    className="bg-green-700 text-white px-6 py-3 rounded-md hover:bg-green-800"
+                    className="bg-aztec-700 text-white px-6 py-3 rounded-md hover:bg-aztec-800 transition duration-200"
                   >
                     Continue
                   </button>
@@ -199,7 +221,7 @@ export default function MoveOutIntent() {
             {step === 2 && (
               <div className="space-y-6">
                 <div className="text-center mb-6">
-                  <FaHome className="text-primary-600 text-4xl mx-auto mb-4" />
+                  <FaHome className="text-aztec-600 text-4xl mx-auto mb-4" />
                   <h2 className="text-xl font-semibold text-gray-900">Property Preferences</h2>
                   <p className="text-gray-600">What type of property are you looking for?</p>
                 </div>
@@ -212,7 +234,7 @@ export default function MoveOutIntent() {
                     <select
                       value={preferences.propertyType}
                       onChange={(e) => setPreferences(prev => ({ ...prev, propertyType: e.target.value }))}
-                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-primary-600 focus:border-primary-600"
+                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-aztec-600 focus:border-aztec-600"
                       required
                     >
                       <option value="flat">Apartment/Flat</option>
@@ -229,7 +251,7 @@ export default function MoveOutIntent() {
                     <select
                       value={preferences.bedrooms}
                       onChange={(e) => setPreferences(prev => ({ ...prev, bedrooms: parseInt(e.target.value) }))}
-                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-primary-600 focus:border-primary-600"
+                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-aztec-600 focus:border-aztec-600"
                       required
                     >
                       <option value={1}>1 Bedroom</option>
@@ -251,7 +273,7 @@ export default function MoveOutIntent() {
                         ...prev, 
                         priceRange: { ...prev.priceRange, min: parseInt(e.target.value) }
                       }))}
-                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-primary-600 focus:border-primary-600"
+                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-aztec-600 focus:border-aztec-600"
                       placeholder="200,000"
                       required
                     />
@@ -268,7 +290,7 @@ export default function MoveOutIntent() {
                         ...prev, 
                         priceRange: { ...prev.priceRange, max: parseInt(e.target.value) }
                       }))}
-                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-primary-600 focus:border-primary-600"
+                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-aztec-600 focus:border-aztec-600"
                       placeholder="1,000,000"
                       required
                     />
@@ -282,7 +304,7 @@ export default function MoveOutIntent() {
                   <textarea
                     value={preferences.specialRequirements}
                     onChange={(e) => setPreferences(prev => ({ ...prev, specialRequirements: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-primary-600 focus:border-primary-600"
+                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-aztec-600 focus:border-aztec-600"
                     rows={3}
                     placeholder="Any specific requirements or preferences..."
                   />
@@ -292,14 +314,14 @@ export default function MoveOutIntent() {
                   <button
                     type="button"
                     onClick={prevStep}
-                    className="bg-gray-300 text-gray-700 px-6 py-3 rounded-md hover:bg-gray-400"
+                    className="bg-gray-300 text-gray-700 px-6 py-3 rounded-md hover:bg-gray-400 transition duration-200"
                   >
                     Back
                   </button>
                   <button
                     type="button"
                     onClick={nextStep}
-                    className="bg-green-700 text-white px-6 py-3 rounded-md hover:bg-green-800"
+                    className="bg-aztec-700 text-white px-6 py-3 rounded-md hover:bg-aztec-800 transition duration-200"
                   >
                     Continue
                   </button>
@@ -320,7 +342,7 @@ export default function MoveOutIntent() {
                   <div 
                     className={`border-2 rounded-lg p-6 cursor-pointer transition-all ${
                       preferences.useDwellioFacilitation 
-                        ? 'border-primary-600 bg-primary-50' 
+                        ? 'border-aztec-600 bg-aztec-50' 
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                     onClick={() => setPreferences(prev => ({ ...prev, useDwellioFacilitation: true }))}
@@ -339,7 +361,7 @@ export default function MoveOutIntent() {
                         <p className="text-gray-600 mb-3">
                           We represent you to landlords, handle all negotiations, manage payments, and take care of all paperwork.
                         </p>
-                        <div className="bg-primary-100 text-primary-800 px-3 py-1 rounded-full text-sm font-medium inline-block">
+                        <div className="bg-aztec-100 text-aztec-800 px-3 py-1 rounded-full text-sm font-medium inline-block">
                           Only 5% fee (vs 10% traditional agent)
                         </div>
                       </div>
@@ -349,7 +371,7 @@ export default function MoveOutIntent() {
                   <div 
                     className={`border-2 rounded-lg p-6 cursor-pointer transition-all ${
                       !preferences.useDwellioFacilitation 
-                        ? 'border-primary-600 bg-primary-50' 
+                        ? 'border-aztec-600 bg-aztec-50' 
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                     onClick={() => setPreferences(prev => ({ ...prev, useDwellioFacilitation: false }))}
@@ -368,10 +390,33 @@ export default function MoveOutIntent() {
                         <p className="text-gray-600 mb-3">
                           We'll show you matching properties and connect you directly with current tenants. You handle the rest.
                         </p>
-                        <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium inline-block">
+                        <div className="bg-accent-slate-200 text-accent-slate-800 px-3 py-1 rounded-full text-sm font-medium inline-block">
                           No fees
                         </div>
                       </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-8">
+                  <div className="bg-aztec-50 rounded-lg p-4 border border-aztec-100">
+                    <h3 className="font-medium text-aztec-900 mb-2">Sample Property Matches</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <img 
+                        src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=780&q=80" 
+                        alt="Sample property"
+                        className="rounded h-24 w-full object-cover" 
+                      />
+                      <img 
+                        src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=870&q=80" 
+                        alt="Sample property"
+                        className="rounded h-24 w-full object-cover" 
+                      />
+                      <img 
+                        src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=870&q=80" 
+                        alt="Sample property"
+                        className="rounded h-24 w-full object-cover" 
+                      />
                     </div>
                   </div>
                 </div>
@@ -380,16 +425,24 @@ export default function MoveOutIntent() {
                   <button
                     type="button"
                     onClick={prevStep}
-                    className="bg-gray-300 text-gray-700 px-6 py-3 rounded-md hover:bg-gray-400"
+                    className="bg-gray-300 text-gray-700 px-6 py-3 rounded-md hover:bg-gray-400 transition duration-200"
                   >
                     Back
                   </button>
                   <button
                     type="submit"
                     disabled={loading}
-                    className="bg-green-700 text-white px-6 py-3 rounded-md hover:bg-green-800 disabled:opacity-50"
+                    className="bg-aztec-700 text-white px-6 py-3 rounded-md hover:bg-aztec-800 transition duration-200 disabled:opacity-50 flex items-center justify-center"
                   >
-                    {loading ? 'Submitting...' : 'Find My Next Home'}
+                    {loading ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Submitting...
+                      </>
+                    ) : 'Find My Next Home'}
                   </button>
                 </div>
               </div>
